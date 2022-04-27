@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import PostsProvider, { usePosts } from './context/posts/posts.provider';
 
 import accessTokenInterceptor from './interceptors/access-token.interceptor';
 import apiService from './services/api.service';
@@ -19,27 +20,38 @@ const Stack = createNativeStackNavigator();
 
 const App = () => {
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Details" component={DetailsScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <PostsProvider>
+      <NavigationContainer>
+        <Stack.Navigator>
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Details" component={DetailsScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </PostsProvider>
   );
 };
 
 const HomeScreen = ({ navigation }) => {
-  const [posts, setData] = useState([]);
+  const { postsState } = usePosts();
+  const { onPostsLoaded } = usePosts();
+  const [posts, setPosts] = useState([]);
 
   useEffect(() => {
     loadData();
   }, []);
 
+  useEffect(() => {
+    const storePosts = postsState.posts;
+    if (storePosts) {
+      setPosts(storePosts);
+    }
+  }, [postsState.posts]);
+
   const loadData = async () => {
     try {
       const response = await postsDataService.getPosts();
       const result = await response.result;
-      setData(result);
+      onPostsLoaded(result);
     } catch (error) {
       console.error(error);
     }
